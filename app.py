@@ -19,8 +19,6 @@ def index():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    @app.route("/upload", methods=["POST"])
-def upload():
     with open("record.wav", "wb") as f:
         f.write(request.data)
     return jsonify({"status": "upload ok"})
