@@ -1,3 +1,4 @@
+os.makedirs("static", exist_ok=True)
 from flask import Flask, request, send_file, jsonify
 import openai
 import os
@@ -26,21 +27,22 @@ def upload():
 
 @app.route("/process", methods=["GET"])
 def process():
-    # 1. Whisper STT
+    # Whisper: Neue API
     with open(AUDIO_FILE, "rb") as f:
-        transcript = openai.Audio.transcribe("whisper-1", f)
+        response = openai.audio.transcriptions.create(
+            model="whisper-1",
+            file=f
+        )
+    prompt = response.text
 
-    prompt = transcript["text"]
-
-    # 2. GPT Response
-    completion = openai.ChatCompletion.create(
+    # GPT
+    completion = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
+    answer = completion.choices[0].message.content
 
-    answer = completion.choices[0].message["content"]
-
-    # 3. Google TTS
+    # Google TTS
     if GOOGLE_TTS_API:
         tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
         headers = {"Content-Type": "application/json"}
@@ -55,11 +57,11 @@ def process():
         with open(RESPONSE_FILE, "wb") as out:
             out.write(base64.b64decode(audio_data))
     else:
-        # Fallback: keine Sprachausgabe
         with open(RESPONSE_FILE, "wb") as out:
             out.write(b"")
 
     return jsonify({"text": answer})
+
 
 @app.route("/text", methods=["GET"])
 def last_text():
