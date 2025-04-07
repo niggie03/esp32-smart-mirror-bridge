@@ -15,7 +15,8 @@ AUDIO_FILE = "record.wav"
 RESPONSE_FILE = "static/response.wav"
 
 # Create the 'static' folder if it doesn't exist
-os.makedirs("static", exist_ok=True)
+if not os.path.exists("static"):
+    os.makedirs("static")
 
 @app.route("/")
 def index():
