@@ -3,6 +3,7 @@ import openai
 import os
 import uuid
 import requests
+import base64  # ⬅️ Das ist neu
 
 app = Flask(__name__)
 
@@ -21,9 +22,7 @@ def index():
 def upload():
     with open("record.wav", "wb") as f:
         f.write(request.data)
-    return jsonify({"status": "upload ok"})
-
-    return jsonify({"status": "upload ok"})
+    return jsonify({"status": "upload ok"})  # ← Nur 1x!
 
 @app.route("/process", methods=["GET"])
 def process():
