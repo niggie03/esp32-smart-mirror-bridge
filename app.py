@@ -30,8 +30,8 @@ def upload():
 
 @app.route("/process", methods=["GET"])
 def process():
-    # Whisper: Neue API
     try:
+        # Whisper: Neue API
         with open(AUDIO_FILE, "rb") as f:
             response = openai.audio.transcriptions.create(
                 model="whisper-1",
@@ -41,8 +41,8 @@ def process():
     except Exception as e:
         return jsonify({"error": f"Whisper failed: {str(e)}"}), 500
 
-    # GPT
     try:
+        # GPT
         completion = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
@@ -51,9 +51,9 @@ def process():
     except Exception as e:
         return jsonify({"error": f"GPT failed: {str(e)}"}), 500
 
-    # Google TTS
-    if GOOGLE_TTS_API:
-        try:
+    try:
+        # Google TTS
+        if GOOGLE_TTS_API:
             tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
             headers = {"Content-Type": "application/json"}
             payload = {
@@ -69,12 +69,12 @@ def process():
                     out.write(base64.b64decode(audio_data))
             else:
                 raise Exception("Google TTS did not return audioContent.")
-        except Exception as e:
-            return jsonify({"error": f"Google TTS failed: {str(e)}"}), 500
-    else:
-        # Fallback: keine Sprachausgabe
-        with open(RESPONSE_FILE, "wb") as out:
-            out.write(b"")
+        else:
+            # Fallback: keine Sprachausgabe
+            with open(RESPONSE_FILE, "wb") as out:
+                out.write(b"")
+    except Exception as e:
+        return jsonify({"error": f"Google TTS failed: {str(e)}"}), 500
 
     return jsonify({"text": answer})
 
