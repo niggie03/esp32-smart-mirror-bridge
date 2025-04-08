@@ -27,15 +27,21 @@ def generate_thinking_audio():
     if GOOGLE_TTS_API:
         print("🎤 Erzeuge Thinking-Audio...")
         sys.stdout.flush()
+
+        thinking_texts = [
+            "Einen Moment bitte... ich denke kurz nach... das ist eine interessante Frage...",
+            "Hm... einen Augenblick... ich analysiere gerade die Informationen...",
+            "Okay... das muss ich mir genauer überlegen... gleich hab ich was für dich...",
+            "Ahh... gib mir kurz Zeit... ich formuliere eine passende Antwort...",
+            "Oh, da muss ich mal kurz nachdenken... das dauert einen kleinen Moment..."
+        ]
+
+        thinking_text = random.choice(thinking_texts)
+
         tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
         headers = {"Content-Type": "application/json"}
         payload = {
-            "input": {"text": random.choice([
-                "Ähm... einen Moment bitte...",
-                "Hmm... ich denke kurz nach...",
-                "Sekunde... ich überlege...",
-                "Ahhh... interessante Frage...",
-            ])},
+            "input": {"text": thinking_text},
             "voice": {
                 "languageCode": "de-DE",
                 "name": "de-DE-Standard-B"
@@ -52,12 +58,54 @@ def generate_thinking_audio():
 
         if "audioContent" in response:
             audio_data = response["audioContent"]
-            with open(THINKING_FILE, "wb") as out:
+            with open("static/thinking.wav", "wb") as out:
                 out.write(base64.b64decode(audio_data))
             print("💭 Thinking-Audio gespeichert.")
         else:
             print("⚠️ Keine Thinking-TTS-Antwort.")
         sys.stdout.flush()
+def generate_thinking_audio():
+if GOOGLE_TTS_API:
+    print("🎤 Erzeuge Thinking-Audio...")
+    sys.stdout.flush()
+
+    thinking_texts = [
+        "Einen Moment bitte... ich denke kurz nach... das ist eine interessante Frage...",
+        "Hm... einen Augenblick... ich analysiere gerade die Informationen...",
+        "Okay... das muss ich mir genauer überlegen... gleich hab ich was für dich...",
+        "Ahh... gib mir kurz Zeit... ich formuliere eine passende Antwort...",
+        "Oh, da muss ich mal kurz nachdenken... das dauert einen kleinen Moment..."
+    ]
+
+    thinking_text = random.choice(thinking_texts)
+
+    tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "input": {"text": thinking_text},
+        "voice": {
+            "languageCode": "de-DE",
+            "name": "de-DE-Standard-B"
+        },
+        "audioConfig": {
+            "audioEncoding": "LINEAR16",
+            "speakingRate": 1.2,
+            "pitch": 1.5,
+            "sampleRateHertz": 44100
+        }
+    }
+
+    response = requests.post(tts_url, headers=headers, json=payload).json()
+
+    if "audioContent" in response:
+        audio_data = response["audioContent"]
+        with open("static/thinking.wav", "wb") as out:
+            out.write(base64.b64decode(audio_data))
+        print("💭 Thinking-Audio gespeichert.")
+    else:
+        print("⚠️ Keine Thinking-TTS-Antwort.")
+    sys.stdout.flush()
+
 
 @app.route("/")
 def index():
