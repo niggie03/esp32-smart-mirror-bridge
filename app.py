@@ -88,6 +88,7 @@ def process():
                     "audioEncoding": "LINEAR16",
                     "speakingRate": 1.4,   # etwas flotter
                     "pitch": 1.5
+                    "sampleRateHertz": 44100
                 }
             }
 
