@@ -15,6 +15,7 @@ openai.api_key = OPENAI_API_KEY
 
 AUDIO_FILE = "record.wav"
 RESPONSE_FILE = "static/response.wav"
+THINKING_FILE = "static/thinking.wav"
 
 # Stelle sicher, dass 'static/' ein Verzeichnis ist
 if os.path.exists("static") and not os.path.isdir("static"):
@@ -22,17 +23,41 @@ if os.path.exists("static") and not os.path.isdir("static"):
 if not os.path.exists("static"):
     os.makedirs("static")
 
-# Füllwörter einbauen + Pausen (SSML)
-def make_response_more_natural(text):
-    fillers = [
-        "Ähm...",
-        "Hmm...",
-        "Einen Moment bitte...",
-        "Ahhh...",
-        "Gute Frage..."
-    ]
-    filler = random.choice(fillers)
-    return f"<speak>{filler} <break time='500ms'/> {text}</speak>"
+def generate_thinking_audio():
+    if GOOGLE_TTS_API:
+        print("🎤 Erzeuge Thinking-Audio...")
+        sys.stdout.flush()
+        tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "input": {"text": random.choice([
+                "Ähm... einen Moment bitte...",
+                "Hmm... ich denke kurz nach...",
+                "Sekunde... ich überlege...",
+                "Ahhh... interessante Frage...",
+            ])},
+            "voice": {
+                "languageCode": "de-DE",
+                "name": "de-DE-Standard-B"
+            },
+            "audioConfig": {
+                "audioEncoding": "LINEAR16",
+                "speakingRate": 1.2,
+                "pitch": 1.5,
+                "sampleRateHertz": 44100
+            }
+        }
+
+        response = requests.post(tts_url, headers=headers, json=payload).json()
+
+        if "audioContent" in response:
+            audio_data = response["audioContent"]
+            with open(THINKING_FILE, "wb") as out:
+                out.write(base64.b64decode(audio_data))
+            print("💭 Thinking-Audio gespeichert.")
+        else:
+            print("⚠️ Keine Thinking-TTS-Antwort.")
+        sys.stdout.flush()
 
 @app.route("/")
 def index():
@@ -43,7 +68,7 @@ def upload():
     try:
         with open(AUDIO_FILE, "wb") as f:
             f.write(request.data)
-        print("📥 Audio-Datei empfangen und gespeichert.")
+        print("📥 Audio-Datei empfangen.")
         sys.stdout.flush()
         return jsonify({"status": "upload ok"})
     except Exception as e:
@@ -53,8 +78,10 @@ def upload():
 
 @app.route("/process", methods=["GET"])
 def process():
+    generate_thinking_audio()
+
     try:
-        print("📥 Starte Whisper-Verarbeitung...")
+        print("📥 Starte Whisper...")
         sys.stdout.flush()
         with open(AUDIO_FILE, "rb") as f:
             transcription = openai.audio.transcriptions.create(
@@ -90,12 +117,8 @@ def process():
         if GOOGLE_TTS_API:
             tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
             headers = {"Content-Type": "application/json"}
-
-            # Antwort natürlicher gestalten
-            ssml_answer = make_response_more_natural(answer)
-
             payload = {
-                "input": {"ssml": ssml_answer},
+                "input": {"text": answer},
                 "voice": {
                     "languageCode": "de-DE",
                     "name": "de-DE-Standard-B"
@@ -114,13 +137,13 @@ def process():
                 audio_data = response["audioContent"]
                 with open(RESPONSE_FILE, "wb") as out:
                     out.write(base64.b64decode(audio_data))
-                print("✅ TTS erfolgreich. Datei gespeichert.")
+                print("✅ TTS erfolgreich. Antwort gespeichert.")
             else:
                 raise Exception("Google TTS did not return audioContent.")
         else:
             with open(RESPONSE_FILE, "wb") as out:
                 out.write(b"")
-            print("⚠️ Kein GOOGLE_TTS_API-Token – leere Datei erstellt.")
+            print("⚠️ Kein GOOGLE_TTS_API – leere Datei.")
         sys.stdout.flush()
     except Exception as e:
         print(f"❌ TTS-Fehler: {e}")
@@ -129,9 +152,12 @@ def process():
 
     return jsonify({"text": answer})
 
-@app.route("/text", methods=["GET"])
-def last_text():
-    return jsonify({"status": "ready"})
+@app.route("/thinking.wav", methods=["GET"])
+def get_thinking():
+    if os.path.exists(THINKING_FILE):
+        return send_file(THINKING_FILE, mimetype="audio/wav")
+    else:
+        return jsonify({"error": "No thinking audio found."}), 404
 
 @app.route("/response.wav", methods=["GET"])
 def get_audio():
