@@ -82,14 +82,15 @@ def process():
                 "input": {"text": answer},
                 "voice": {
                     "languageCode": "de-DE",
-                    "name": "de-DE-Wavenet-B"  # Männerstimme mit mehr Ausdruck
+                    "name": "de-DE-Wavenet-B"
                 },
                 "audioConfig": {
                     "audioEncoding": "LINEAR16",
-                    "speakingRate": 1.2,   # 1.0 ist Standard, >1.0 schneller
-                    "pitch": 2.0           # +2 Halbtöne
+                    "speakingRate": 1.4,   # etwas flotter
+                    "pitch": 1.5
                 }
             }
+
             response = requests.post(tts_url, headers=headers, json=payload).json()
 
             if "audioContent" in response:
