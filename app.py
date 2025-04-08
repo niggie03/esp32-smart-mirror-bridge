@@ -2,6 +2,7 @@ import os
 import sys
 import base64
 import requests
+import random
 from flask import Flask, request, send_file, jsonify
 import openai
 
@@ -21,6 +22,17 @@ if os.path.exists("static") and not os.path.isdir("static"):
 if not os.path.exists("static"):
     os.makedirs("static")
 
+# Füllwörter einbauen + Pausen (SSML)
+def make_response_more_natural(text):
+    fillers = [
+        "Ähm...",
+        "Hmm...",
+        "Einen Moment bitte...",
+        "Ahhh...",
+        "Gute Frage..."
+    ]
+    filler = random.choice(fillers)
+    return f"<speak>{filler} <break time='500ms'/> {text}</speak>"
 
 @app.route("/")
 def index():
@@ -78,15 +90,19 @@ def process():
         if GOOGLE_TTS_API:
             tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
             headers = {"Content-Type": "application/json"}
+
+            # Antwort natürlicher gestalten
+            ssml_answer = make_response_more_natural(answer)
+
             payload = {
-                "input": {"text": answer},
+                "input": {"ssml": ssml_answer},
                 "voice": {
                     "languageCode": "de-DE",
                     "name": "de-DE-Standard-B"
                 },
                 "audioConfig": {
                     "audioEncoding": "LINEAR16",
-                    "speakingRate": 1.2,   
+                    "speakingRate": 1.2,
                     "pitch": 1.5,
                     "sampleRateHertz": 44100
                 }
