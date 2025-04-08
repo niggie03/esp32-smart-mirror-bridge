@@ -82,7 +82,7 @@ def process():
                 "input": {"text": answer},
                 "voice": {
                     "languageCode": "de-DE",
-                    "name": "de-DE-Wavenet-A"
+                    "name": "de-DE-Chirp-HD-D"
                 },
                 "audioConfig": {
                     "audioEncoding": "LINEAR16",
