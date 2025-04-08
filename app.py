@@ -80,8 +80,15 @@ def process():
             headers = {"Content-Type": "application/json"}
             payload = {
                 "input": {"text": answer},
-                "voice": {"languageCode": "en-US", "name": "en-US-Wavenet-D"},
-                "audioConfig": {"audioEncoding": "LINEAR16"}
+                "voice": {
+                    "languageCode": "de-DE",
+                    "name": "de-DE-Wavenet-B"  # Männerstimme mit mehr Ausdruck
+                },
+                "audioConfig": {
+                    "audioEncoding": "LINEAR16",
+                    "speakingRate": 1.2,   # 1.0 ist Standard, >1.0 schneller
+                    "pitch": 2.0           # +2 Halbtöne
+                }
             }
             response = requests.post(tts_url, headers=headers, json=payload).json()
 
