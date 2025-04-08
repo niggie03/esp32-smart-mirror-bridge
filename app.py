@@ -86,7 +86,7 @@ def process():
                 },
                 "audioConfig": {
                     "audioEncoding": "LINEAR16",
-                    "speakingRate": 4,   # etwas flotter
+                    "speakingRate": 1.2,   
                     "pitch": 1.5,
                     "sampleRateHertz": 44100
                 }
