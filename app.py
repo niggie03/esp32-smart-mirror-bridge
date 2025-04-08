@@ -33,7 +33,37 @@ def generate_thinking_audio():
             "Hm... einen Augenblick... ich analysiere gerade die Informationen...",
             "Okay... das muss ich mir genauer überlegen... gleich hab ich was für dich...",
             "Ahh... gib mir kurz Zeit... ich formuliere eine passende Antwort...",
-            "Oh, da muss ich mal kurz nachdenken... das dauert einen kleinen Moment..."
+            "Oh, da muss ich mal kurz nachdenken... das dauert einen kleinen Moment...",
+            "Spieglein, Spieglein... ich durchsuche gerade meine silberne Tiefe nach einer Antwort...",
+            "Ich blicke in die magischen Reflexionen der Wahrheit... einen Moment...",
+            "Deine Frage hallt durch die Spiegelwelten... gleich finde ich, was du suchst...",
+            "Ich berate mich mit meinem inneren Orakel... bitte einen kleinen Moment Geduld...",
+            "Die Antwort zieht Nebelspuren auf meiner Oberfläche... ich bringe Klarheit...",
+            "Während ich nachdenke... bewundere ruhig dein großartiges Spiegelbild...",
+            "Ein Moment bitte – ich poliere meine Gedanken für dich auf Hochglanz...",
+            "Ich reflektiere... im wahrsten Sinne des Wortes... Sekunde noch!",
+            "Hm... ich frage mein glänzendes Unterbewusstsein...",
+            "Ich tippe gerade mit meinen Pixeln... gleich fertig!",
+            "Verbindung zur Spiegel-Cloud wird aufgebaut... bitte warte...",
+            "WLAN stabil... Rechenleistung läuft... Antwort im Anflug...",
+            "Ich filtere reflektierte Daten... gleich leuchte ich dir den Weg...",
+            "Glasfaser durchspiegelt... Töne moduliert... gleich gibt’s Output...",
+            "Ich scanne die Realität... sie braucht noch einen Moment, um zu laden...""Spieglein, Spieglein... ich durchsuche gerade meine silberne Tiefe nach einer Antwort...",
+            "Ich blicke in die magischen Reflexionen der Wahrheit... einen Moment...",
+            "Deine Frage hallt durch die Spiegelwelten... gleich finde ich, was du suchst...",
+            "Ich berate mich mit meinem inneren Orakel... bitte einen kleinen Moment Geduld...",
+            "Die Antwort zieht Nebelspuren auf meiner Oberfläche... ich bringe Klarheit...",
+            "Während ich nachdenke... bewundere ruhig dein großartiges Spiegelbild...",
+            "Ein Moment bitte – ich poliere meine Gedanken für dich auf Hochglanz...",
+            "Ich reflektiere... im wahrsten Sinne des Wortes... Sekunde noch!",
+            "Hm... ich frage mein glänzendes Unterbewusstsein...",
+            "Ich tippe gerade mit meinen Pixeln... gleich fertig!",
+            "Verbindung zur Spiegel-Cloud wird aufgebaut... bitte warte...",
+            "WLAN stabil... Rechenleistung läuft... Antwort im Anflug...",
+            "Ich filtere reflektierte Daten... gleich leuchte ich dir den Weg...",
+            "Glasfaser durchspiegelt... Töne moduliert... gleich gibt’s Output...",
+            "Ich scanne die Realität... sie braucht noch einen Moment, um zu laden...",
+            "Ich kann dir keine Schönheit schenken… aber eine gute Antwort vielleicht.“
         ]
 
         thinking_text = random.choice(thinking_texts)
@@ -64,48 +94,6 @@ def generate_thinking_audio():
         else:
             print("⚠️ Keine Thinking-TTS-Antwort.")
         sys.stdout.flush()
-def generate_thinking_audio():
-if GOOGLE_TTS_API:
-    print("🎤 Erzeuge Thinking-Audio...")
-    sys.stdout.flush()
-
-    thinking_texts = [
-        "Einen Moment bitte... ich denke kurz nach... das ist eine interessante Frage...",
-        "Hm... einen Augenblick... ich analysiere gerade die Informationen...",
-        "Okay... das muss ich mir genauer überlegen... gleich hab ich was für dich...",
-        "Ahh... gib mir kurz Zeit... ich formuliere eine passende Antwort...",
-        "Oh, da muss ich mal kurz nachdenken... das dauert einen kleinen Moment..."
-    ]
-
-    thinking_text = random.choice(thinking_texts)
-
-    tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "input": {"text": thinking_text},
-        "voice": {
-            "languageCode": "de-DE",
-            "name": "de-DE-Standard-B"
-        },
-        "audioConfig": {
-            "audioEncoding": "LINEAR16",
-            "speakingRate": 1.2,
-            "pitch": 1.5,
-            "sampleRateHertz": 44100
-        }
-    }
-
-    response = requests.post(tts_url, headers=headers, json=payload).json()
-
-    if "audioContent" in response:
-        audio_data = response["audioContent"]
-        with open("static/thinking.wav", "wb") as out:
-            out.write(base64.b64decode(audio_data))
-        print("💭 Thinking-Audio gespeichert.")
-    else:
-        print("⚠️ Keine Thinking-TTS-Antwort.")
-    sys.stdout.flush()
-
 
 @app.route("/")
 def index():
