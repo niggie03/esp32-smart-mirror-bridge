@@ -31,28 +31,32 @@ def upload():
 @app.route("/process", methods=["GET"])
 def process():
     try:
-        # Whisper: Neue API
+        print("📥 Starte Whisper-Verarbeitung...")
         with open(AUDIO_FILE, "rb") as f:
-            response = openai.audio.transcriptions.create(
+            transcription = openai.audio.transcriptions.create(
                 model="whisper-1",
                 file=f
             )
-        prompt = response.text
+        prompt = transcription.text
+        print(f"📝 Transkription: {prompt}")
     except Exception as e:
+        print(f"❌ Whisper-Fehler: {e}")
         return jsonify({"error": f"Whisper failed: {str(e)}"}), 500
 
     try:
-        # GPT
+        print("💬 Frage an ChatGPT...")
         completion = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
         answer = completion.choices[0].message.content
+        print(f"🤖 GPT-Antwort: {answer}")
     except Exception as e:
+        print(f"❌ GPT-Fehler: {e}")
         return jsonify({"error": f"GPT failed: {str(e)}"}), 500
 
     try:
-        # Google TTS
+        print("🗣 Starte TTS...")
         if GOOGLE_TTS_API:
             tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
             headers = {"Content-Type": "application/json"}
@@ -67,16 +71,19 @@ def process():
                 audio_data = response["audioContent"]
                 with open(RESPONSE_FILE, "wb") as out:
                     out.write(base64.b64decode(audio_data))
+                print("✅ TTS erfolgreich.")
             else:
                 raise Exception("Google TTS did not return audioContent.")
         else:
-            # Fallback: keine Sprachausgabe
             with open(RESPONSE_FILE, "wb") as out:
                 out.write(b"")
+            print("⚠️ Kein Google TTS API-Key – Stille erzeugt.")
     except Exception as e:
+        print(f"❌ TTS-Fehler: {e}")
         return jsonify({"error": f"Google TTS failed: {str(e)}"}), 500
 
     return jsonify({"text": answer})
+
 
 @app.route("/text", methods=["GET"])
 def last_text():
