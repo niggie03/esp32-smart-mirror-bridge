@@ -70,6 +70,7 @@ def upload():
             f.write(request.data)
         print("📥 Audio-Datei empfangen.")
         sys.stdout.flush()
+        generate_thinking_audio()
         return jsonify({"status": "upload ok"})
     except Exception as e:
         print(f"❌ Fehler beim Upload: {e}")
@@ -78,8 +79,6 @@ def upload():
 
 @app.route("/process", methods=["GET"])
 def process():
-    generate_thinking_audio()
-
     try:
         print("📥 Starte Whisper...")
         sys.stdout.flush()
