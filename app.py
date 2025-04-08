@@ -13,7 +13,7 @@ GOOGLE_TTS_API = os.environ.get("GOOGLE_TTS_API")  # optional
 openai.api_key = OPENAI_API_KEY
 AUDIO_FILE = "record.wav"
 RESPONSE_FILE = "static/response.wav"
-
+print("📦 OpenAI-Version:", openai.__version__)
 # Create the 'static' folder if it doesn't exist
 if not os.path.exists("static"):
     os.makedirs("static")
