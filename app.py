@@ -64,7 +64,7 @@ def generate_thinking_audio():
             "Ich filtere reflektierte Daten... gleich leuchte ich dir den Weg...",
             "Glasfaser durchspiegelt... Töne moduliert... gleich gibt’s Output...",
             "Ich scanne die Realität... sie braucht noch einen Moment, um zu laden...",
-            "Ich kann dir keine Schönheit schenken… aber eine gute Antwort vielleicht.“
+            "Ich kann dir keine Schönheit schenken… aber eine gute Antwort vielleicht."
         ]
 
         thinking_text = random.choice(thinking_texts)
