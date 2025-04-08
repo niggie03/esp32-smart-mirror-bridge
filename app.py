@@ -15,9 +15,12 @@ openai.api_key = OPENAI_API_KEY
 AUDIO_FILE = "record.wav"
 RESPONSE_FILE = "static/response.wav"
 
-# Erstelle static-Verzeichnis, falls es nicht existiert
+# Stelle sicher, dass 'static/' ein Verzeichnis ist
+if os.path.exists("static") and not os.path.isdir("static"):
+    os.remove("static")
 if not os.path.exists("static"):
     os.makedirs("static")
+
 
 @app.route("/")
 def index():
