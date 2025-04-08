@@ -82,7 +82,7 @@ def process():
                 "input": {"text": answer},
                 "voice": {
                     "languageCode": "de-DE",
-                    "name": "de-DE-Wavenet-B"
+                    "name": "de-DE-Wavenet-A"
                 },
                 "audioConfig": {
                     "audioEncoding": "LINEAR16",
