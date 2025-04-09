@@ -155,6 +155,18 @@ def process():
             messages=[{"role": "user", "content": prompt}]
         )
         answer = completion.choices[0].message.content
+        # GPT soll prüfen, ob Folgefrage sinnvoll wäre
+        followup_check = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Du entscheidest, ob eine Antwort eine Folgefrage oder Reaktion erwarten lässt."},
+                {"role": "user", "content": f"Ist folgende Antwort eine, auf die man sinnvoll antworten oder eine Rückfrage stellen würde?\n\n\"{answer}\"\n\nAntworte nur mit JA oder NEIN."}
+            ]
+        )
+        
+        followup_raw = followup_check.choices[0].message.content.strip().lower()
+        needs_followup = "ja" in followup_raw
+
         print(f"GPT-Antwort: {answer}")
         sys.stdout.flush()
     except Exception as e:
@@ -203,7 +215,11 @@ def process():
         sys.stdout.flush()
         return jsonify({"error": f"Google TTS failed: {str(e)}"}), 500
 
-    return jsonify({"text": answer})
+    return jsonify({
+        "text": answer,
+        "followup": needs_followup
+})
+
 
 #Übergangsaudio
 @app.route("/thinking.wav", methods=["GET"])
