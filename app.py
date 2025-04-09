@@ -85,7 +85,7 @@ def generate_thinking_audio():
                 "audioEncoding": "LINEAR16",
                 "speakingRate": 1.2,
                 "pitch": 1.5,
-                "sampleRateHertz": 44100
+                "sampleRateHertz": 22050
             }
         }
 
