@@ -2,9 +2,9 @@ import os
 import sys
 import base64
 import requests
-import random        #Für Übergangssätze
-from flask import Flask, request, send_file, jsonify        #Framework für REST-API
-import openai        #Whisper und OpenAI
+import random        # Für Übergangssätze
+from flask import Flask, request, send_file, jsonify        # Framework für REST-API
+import openai        # Whisper und OpenAI
 
 app = Flask(__name__)
 
@@ -13,23 +13,24 @@ GOOGLE_TTS_API = os.environ.get("GOOGLE_TTS_API")
 
 openai.api_key = OPENAI_API_KEY
 
+# Dateipfade
 AUDIO_FILE = "record.wav"
 RESPONSE_FILE = "static/response.wav"
 THINKING_FILE = "static/thinking.wav"
 
-#existiert Static?
+# existiert Static?
 if os.path.exists("static") and not os.path.isdir("static"):
-    os.remove("static")        #entfernen falls doppelt
+    os.remove("static")        # entfernen falls doppelt
 if not os.path.exists("static"):
-    os.makedirs("static")      #erstellen
+    os.makedirs("static")      # erstellen
 
-#Überleitungssätze einbinden
+# Überleitungssätze einbinden
 def generate_thinking_audio():
     if GOOGLE_TTS_API:
         print("Erzeuge Thinking-Audio...")
         sys.stdout.flush()
 
-        #Texte
+        # Texte
         thinking_texts = [
             "Einen Moment bitte... ich denke kurz nach... das ist eine interessante Frage...",
             "Hm... einen Augenblick... ich analysiere gerade die Informationen...",
@@ -69,17 +70,17 @@ def generate_thinking_audio():
             "Ich kann dir keine Schönheit schenken… aber eine gute Antwort vielleicht."
         ]
 
-        #random auswählen
+        # random auswählen
         thinking_text = random.choice(thinking_texts)
 
-        #Anfrage an Google TTS API für die Übergangssätze 
+        # Anfrage an Google TTS API für die Übergangssätze 
         tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
         headers = {"Content-Type": "application/json"}
         payload = {
             "input": {"text": thinking_text},
             "voice": {
                 "languageCode": "de-DE",
-                "name": "de-DE-Standard-B"
+                "name": "de-DE-Standard-B"        # language Model
             },
             "audioConfig": {
                 "audioEncoding": "LINEAR16",
@@ -89,7 +90,7 @@ def generate_thinking_audio():
             }
         }
 
-        #Anfrage senden und Antwort verarbeiten
+        # Anfrage senden und Antwort verarbeiten
         response = requests.post(tts_url, headers=headers, json=payload).json()
 
         if "audioContent" in response:
@@ -101,22 +102,22 @@ def generate_thinking_audio():
             print("Keine Thinking-TTS-Antwort.")
         sys.stdout.flush()
 
-#Allgemeine Statusanzeige
+# Allgemeine Statusanzeige
 @app.route("/")
 def index():
     return "✅ ESP32 Smart Mirror Bridge is online"
 
-#Upload Funktion
+# Upload Funktion
 @app.route("/upload", methods=["POST"])
 def upload():
     try:
-        #WAV Datei speichern
+        # WAV Datei speichern
         with open(AUDIO_FILE, "wb") as f:
             f.write(request.data)
         print("📥 Audio-Datei empfangen.")
         sys.stdout.flush
 
-        #Übergangsantwort vorbereiten (geschmeidiger Übergang)
+        # Übergangsantwort vorbereiten (geschmeidiger Übergang)
         generate_thinking_audio()
         return jsonify({"status": "upload ok"})
     except Exception as e:
@@ -124,7 +125,7 @@ def upload():
         sys.stdout.flush()
         return jsonify({"error": str(e)}), 500
 
-#Hauptverarbeitung
+# Hauptverarbeitung
 @app.route("/process", methods=["GET"])
 def process():
     try:
@@ -133,7 +134,7 @@ def process():
 
         #Transkription mit Whisper
         with open(AUDIO_FILE, "rb") as f:
-            transcription = openai.audio.transcriptions.create(
+            transcription = openai.audio.transcriptions.create(        # STT starten
                 model="whisper-1",
                 file=f
             )
@@ -149,12 +150,13 @@ def process():
         print("GPT wird gefragt...")
         sys.stdout.flush()
 
-        #Antwort von ChatGPT
+        # Antwort von ChatGPT
         completion = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
-        answer = completion.choices[0].message.content
+        answer = completion.choices[0].message.content        # Antwort speichern
+        
         # GPT soll prüfen, ob Folgefrage sinnvoll wäre
         followup_check = openai.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -164,7 +166,7 @@ def process():
             ]
         )
         
-        followup_raw = followup_check.choices[0].message.content.strip().lower()
+        followup_raw = followup_check.choices[0].message.content.strip().lower()        # Antwort für Follow up schreiben
         needs_followup = "ja" in followup_raw
 
         print(f"GPT-Antwort: {answer}")
@@ -179,14 +181,14 @@ def process():
         sys.stdout.flush()
         if GOOGLE_TTS_API:
             
-            #Google TTS mit GPT Antwort
+            # Google TTS mit GPT Antwort
             tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
             headers = {"Content-Type": "application/json"}
             payload = {
                 "input": {"text": answer},
                 "voice": {
                     "languageCode": "de-DE",
-                    "name": "de-DE-Standard-B"
+                    "name": "de-DE-Standard-B"        # Language Model
                 },
                 "audioConfig": {
                     "audioEncoding": "LINEAR16",
@@ -215,13 +217,13 @@ def process():
         sys.stdout.flush()
         return jsonify({"error": f"Google TTS failed: {str(e)}"}), 500
 
-    return jsonify({
+    return jsonify({    # Ergebnis zurückgeben
         "text": answer,
         "followup": needs_followup
 })
 
 
-#Übergangsaudio
+# Übergangsaudio
 @app.route("/thinking.wav", methods=["GET"])
 def get_thinking():
     if os.path.exists(THINKING_FILE):
@@ -229,7 +231,7 @@ def get_thinking():
     else:
         return jsonify({"error": "No thinking audio found."}), 404
 
-#Antwort Audio 
+# Antwort Audio 
 @app.route("/response.wav", methods=["GET"])
 def get_audio():
     if os.path.exists(RESPONSE_FILE):
@@ -237,7 +239,7 @@ def get_audio():
     else:
         return jsonify({"error": "No audio response found."}), 404
 
-#Einstiegspunkt
+# Einstiegspunkt
 if __name__ == "__main__":
     print("OpenAI-Version:", openai.__version__)
     sys.stdout.flush()
