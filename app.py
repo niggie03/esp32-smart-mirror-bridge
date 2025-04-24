@@ -162,8 +162,8 @@ def process():
         followup_check = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Du entscheidest, ob eine Antwort eine Folgefrage oder Reaktion erwarten lässt."},
-                {"role": "user", "content": f"Ist folgende Antwort eine, auf die man sinnvoll antworten oder eine Rückfrage stellen würde?\n\n\"{answer}\"\n\nAntworte nur mit JA oder NEIN."}
+                {"role": "system","content": "Du bist ein strenger Filter, der nur mit JA antwortet, wenn eine Rückfrage ausdrücklich erwartet wird – z. B. durch ein Fragezeichen, eine Einladung zur Reaktion oder wenn der Satz offen endet."},
+                {"role": "user", "content": f"Ist folgende Antwort eine, auf die man sinnvoll antworten oder eine Rückfrage stellen würde?\n\n\"{answer}\"\n\nAntworte ausschließlich mit JA oder NEIN."}
             ]
         )
         
