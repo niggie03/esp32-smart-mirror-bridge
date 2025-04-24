@@ -98,7 +98,7 @@ def generate_thinking_audio():
             audio_data = response["audioContent"]
             with open("static/thinking.wav", "wb") as out:
                 out.write(base64.b64decode(audio_data))
-            print("💭 Thinking-Audio gespeichert.")
+            print("Thinking-Audio gespeichert.")
         else:
             print("Keine Thinking-TTS-Antwort.")
         sys.stdout.flush()
@@ -106,7 +106,7 @@ def generate_thinking_audio():
 # Allgemeine Statusanzeige
 @app.route("/")
 def index():
-    return "✅ ESP32 Smart Mirror Bridge is online"
+    return "ESP32 Smart Mirror Bridge is online"
 
 # Upload Funktion
 @app.route("/upload", methods=["POST"])
@@ -115,7 +115,7 @@ def upload():
         # WAV Datei speichern
         with open(AUDIO_FILE, "wb") as f:
             f.write(request.data)
-        print("📥 Audio-Datei empfangen.")
+        print("Audio-Datei empfangen.")
         sys.stdout.flush
 
         # Übergangsantwort vorbereiten (geschmeidiger Übergang)
@@ -140,7 +140,7 @@ def process():
                 file=f
             )
         prompt = transcription.text
-        print(f"📝 Transkription: {prompt}")
+        print(f"Transkription: {prompt}")
         sys.stdout.flush()
     except Exception as e:
         print(f"Whisper-Fehler: {e}")
@@ -154,7 +154,10 @@ def process():
         # Antwort von ChatGPT
         completion = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{
+                "role": "user", "content": 
+                "content": f"Beantworte die folgende Frage in höchstens drei Sätzen: {prompt}
+                }]
         )
         answer = completion.choices[0].message.content        # Antwort speichern
         
@@ -205,7 +208,7 @@ def process():
                 audio_data = response["audioContent"]
                 with open(RESPONSE_FILE, "wb") as out:
                     out.write(base64.b64decode(audio_data))
-                print("✅ TTS erfolgreich. Antwort gespeichert.")
+                print("TTS erfolgreich. Antwort gespeichert.")
             else:
                 raise Exception("Google TTS did not return audioContent.")
         else:
