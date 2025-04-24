@@ -5,7 +5,8 @@ import requests
 import random        # Für Übergangssätze
 from flask import Flask, request, send_file, jsonify        # Framework für REST-API
 import openai        # Whisper und OpenAI
-
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
