@@ -1,0 +1,20 @@
+# On Linux copy this file to /etc/systemd/system and change the values below.
+# Afterwards use the following shell commands to automatically start the server:
+#
+# sudo systemctl daemon-reload
+# sudo systemctl enable mirror.service
+# sudo systemctl start mirror.service
+
+[Unit]
+Description=Mirror (Web Server)
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/mirror
+ExecStart=.env/bin/python app.py
+Restart=on-failure
+RestartSec=5
+User=your-username
+
+[Install]
+WantedBy=multi-user.target
