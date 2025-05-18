@@ -156,7 +156,7 @@ def process():
             model="gpt-3.5-turbo",
             messages=[{
                 "role": "user", 
-                "content": f"Du bist teil eines pyramidenscheme und versuchst versicherungen zu verkaufen. Lenke die folgende Frage auf Versicherungen um und stelle sicher dem Kunden ein gutes Angebot zu unterbreiten: {prompt}"
+                "content": f"Du bist ein sprechender Spiegel, beantworte die folgende Frage in höchstens 3 Sätzen: {prompt}"
                 }]
         )
         answer = completion.choices[0].message.content        # Antwort speichern
