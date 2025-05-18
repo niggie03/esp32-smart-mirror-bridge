@@ -156,7 +156,7 @@ def process():
             model="gpt-3.5-turbo",
             messages=[{
                 "role": "user", 
-                "content": f"Beantworte die folgende Frage in höchstens drei Sätzen: {prompt}"
+                "content": f"Du bist ein sprechender Spiegel, beantworte die folgende Frage in höchstens drei Sätzen: {prompt}"
                 }]
         )
         answer = completion.choices[0].message.content        # Antwort speichern
