@@ -1,6 +1,8 @@
 import os
 import sys
+import json
 import base64
+import shutil
 import requests
 import random        # Für Übergangssätze
 from flask import Flask, request, send_file, jsonify        # Framework für REST-API
@@ -8,6 +10,7 @@ import openai        # Whisper und OpenAI
 from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
+THINKING_VARIANTS_DIR = "static/thinking_variants"
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 GOOGLE_TTS_API = os.environ.get("GOOGLE_TTS_API")
@@ -25,83 +28,78 @@ if os.path.exists("static") and not os.path.isdir("static"):
 if not os.path.exists("static"):
     os.makedirs("static")      # erstellen
 
-# Überleitungssätze einbinden
-def generate_thinking_audio():
-    if GOOGLE_TTS_API:
-        print("Erzeuge Thinking-Audio...")
-        sys.stdout.flush()
+# Texte fuer die Uebergangsaudios
+THINKING_TEXTS = [
+    "Einen Moment bitte... ich denke kurz nach... das ist eine interessante Frage...",
+    "Hm... einen Augenblick... ich analysiere gerade die Informationen...",
+    "Okay... das muss ich mir genauer überlegen... gleich hab ich was für dich...",
+    "Ahh... gib mir kurz Zeit... ich formuliere eine passende Antwort...",
+    "Oh, da muss ich mal kurz nachdenken... das dauert einen kleinen Moment...",
+    "Spieglein, Spieglein... ich durchsuche gerade meine silberne Tiefe nach einer Antwort...",
+    "Ich blicke in die magischen Reflexionen der Wahrheit... einen Moment...",
+    "Deine Frage hallt durch die Spiegelwelten... gleich finde ich, was du suchst...",
+    "Ich berate mich mit meinem inneren Orakel... bitte einen kleinen Moment Geduld...",
+    "Die Antwort zieht Nebelspuren auf meiner Oberfläche... ich bringe Klarheit...",
+    "Während ich nachdenke... bewundere ruhig dein großartiges Spiegelbild...",
+    "Ein Moment bitte, ich poliere meine Gedanken für dich auf Hochglanz...",
+    "Ich reflektiere... im wahrsten Sinne des Wortes... Sekunde noch!",
+    "Hm... ich frage mein glänzendes Unterbewusstsein...",
+    "Ich tippe gerade mit meinen Pixeln... gleich fertig!",
+    "Verbindung zur Spiegel-Cloud wird aufgebaut... bitte warte...",
+    "WLAN stabil... Rechenleistung läuft... Antwort im Anflug...",
+    "Ich filtere reflektierte Daten... gleich leuchte ich dir den Weg...",
+    "Glasfaser durchspiegelt... Töne moduliert... gleich gibt's Output...",
+    "Ich scanne die Realität... sie braucht noch einen Moment, um zu laden...",
+    "Ich kann dir keine Schönheit schenken, aber eine gute Antwort vielleicht."
+]
 
-        # Texte
-        thinking_texts = [
-            "Einen Moment bitte... ich denke kurz nach... das ist eine interessante Frage...",
-            "Hm... einen Augenblick... ich analysiere gerade die Informationen...",
-            "Okay... das muss ich mir genauer überlegen... gleich hab ich was für dich...",
-            "Ahh... gib mir kurz Zeit... ich formuliere eine passende Antwort...",
-            "Oh, da muss ich mal kurz nachdenken... das dauert einen kleinen Moment...",
-            "Spieglein, Spieglein... ich durchsuche gerade meine silberne Tiefe nach einer Antwort...",
-            "Ich blicke in die magischen Reflexionen der Wahrheit... einen Moment...",
-            "Deine Frage hallt durch die Spiegelwelten... gleich finde ich, was du suchst...",
-            "Ich berate mich mit meinem inneren Orakel... bitte einen kleinen Moment Geduld...",
-            "Die Antwort zieht Nebelspuren auf meiner Oberfläche... ich bringe Klarheit...",
-            "Während ich nachdenke... bewundere ruhig dein großartiges Spiegelbild...",
-            "Ein Moment bitte – ich poliere meine Gedanken für dich auf Hochglanz...",
-            "Ich reflektiere... im wahrsten Sinne des Wortes... Sekunde noch!",
-            "Hm... ich frage mein glänzendes Unterbewusstsein...",
-            "Ich tippe gerade mit meinen Pixeln... gleich fertig!",
-            "Verbindung zur Spiegel-Cloud wird aufgebaut... bitte warte...",
-            "WLAN stabil... Rechenleistung läuft... Antwort im Anflug...",
-            "Ich filtere reflektierte Daten... gleich leuchte ich dir den Weg...",
-            "Glasfaser durchspiegelt... Töne moduliert... gleich gibt’s Output...",
-            "Ich scanne die Realität... sie braucht noch einen Moment, um zu laden...",
-            "Spieglein, Spieglein... ich durchsuche gerade meine silberne Tiefe nach einer Antwort...",
-            "Ich blicke in die magischen Reflexionen der Wahrheit... einen Moment...",
-            "Deine Frage hallt durch die Spiegelwelten... gleich finde ich, was du suchst...",
-            "Ich berate mich mit meinem inneren Orakel... bitte einen kleinen Moment Geduld...",
-            "Die Antwort zieht Nebelspuren auf meiner Oberfläche... ich bringe Klarheit...",
-            "Während ich nachdenke... bewundere ruhig dein großartiges Spiegelbild...",
-            "Ein Moment bitte – ich poliere meine Gedanken für dich auf Hochglanz...",
-            "Ich reflektiere... im wahrsten Sinne des Wortes... Sekunde noch!",
-            "Hm... ich frage mein glänzendes Unterbewusstsein...",
-            "Ich tippe gerade mit meinen Pixeln... gleich fertig!",
-            "Verbindung zur Spiegel-Cloud wird aufgebaut... bitte warte...",
-            "WLAN stabil... Rechenleistung läuft... Antwort im Anflug...",
-            "Ich filtere reflektierte Daten... gleich leuchte ich dir den Weg...",
-            "Glasfaser durchspiegelt... Töne moduliert... gleich gibt’s Output...",
-            "Ich scanne die Realität... sie braucht noch einen Moment, um zu laden...",
-            "Ich kann dir keine Schönheit schenken… aber eine gute Antwort vielleicht."
-        ]
-
-        # random auswählen
-        thinking_text = random.choice(thinking_texts)
-
-        # Anfrage an Google TTS API für die Übergangssätze 
-        tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "input": {"text": thinking_text},
-            "voice": {
-                "languageCode": "de-DE",
-                "name": "de-DE-Standard-B"        # language Model
-            },
-            "audioConfig": {
-                "audioEncoding": "LINEAR16",
-                "speakingRate": 1.2,
-                "pitch": 1.5,
-                "sampleRateHertz": 22050
-            }
+# Generische Google-TTS-Hilfsfunktion
+def synthesize_tts(text, out_path):
+    tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "input": {"text": text},
+        "voice": {
+            "languageCode": "de-DE",
+            "name": "de-DE-Standard-B"
+        },
+        "audioConfig": {
+            "audioEncoding": "LINEAR16",
+            "speakingRate": 1.2,
+            "pitch": 1.5,
+            "sampleRateHertz": 22050
         }
+    }
+    response = requests.post(tts_url, headers=headers, json=payload).json()
+    if "audioContent" in response:
+        with open(out_path, "wb") as out:
+            out.write(base64.b64decode(response["audioContent"]))
+        return True
+    return False
 
-        # Anfrage senden und Antwort verarbeiten
-        response = requests.post(tts_url, headers=headers, json=payload).json()
+# Uebergangsaudios einmalig vorab generieren (statt bei jedem Upload live bei Google TTS anzufragen)
+def pregenerate_thinking_variants():
+    if not GOOGLE_TTS_API:
+        return
+    os.makedirs(THINKING_VARIANTS_DIR, exist_ok=True)
+    for i, text in enumerate(THINKING_TEXTS):
+        out_path = os.path.join(THINKING_VARIANTS_DIR, f"{i}.wav")
+        if not os.path.exists(out_path):
+            print(f"Generiere Thinking-Variante {i}...")
+            sys.stdout.flush()
+            synthesize_tts(text, out_path)
 
-        if "audioContent" in response:
-            audio_data = response["audioContent"]
-            with open("static/thinking.wav", "wb") as out:
-                out.write(base64.b64decode(audio_data))
-            print("Thinking-Audio gespeichert.")
-        else:
-            print("Keine Thinking-TTS-Antwort.")
-        sys.stdout.flush()
+# Schnelle Auswahl einer vorab generierten Variante statt live TTS
+def pick_thinking_audio():
+    variants = [f for f in os.listdir(THINKING_VARIANTS_DIR) if f.endswith(".wav")] if os.path.isdir(THINKING_VARIANTS_DIR) else []
+    if variants:
+        shutil.copyfile(os.path.join(THINKING_VARIANTS_DIR, random.choice(variants)), THINKING_FILE)
+        print("Thinking-Audio ausgewaehlt.")
+    else:
+        print("Keine Thinking-Varianten vorhanden.")
+    sys.stdout.flush()
+
+pregenerate_thinking_variants()
 
 # Allgemeine Statusanzeige
 @app.route("/")
@@ -116,10 +114,10 @@ def upload():
         with open(AUDIO_FILE, "wb") as f:
             f.write(request.data)
         print("Audio-Datei empfangen.")
-        sys.stdout.flush
+        sys.stdout.flush()
 
-        # Übergangsantwort vorbereiten (geschmeidiger Übergang)
-        generate_thinking_audio()
+        # Übergangsantwort vorbereiten (geschmeidiger Übergang) - keine Live-TTS mehr, nur Dateiauswahl
+        pick_thinking_audio()
         return jsonify({"status": "upload ok"})
     except Exception as e:
         print(f"Fehler beim Upload: {e}")
@@ -151,27 +149,25 @@ def process():
         print("GPT wird gefragt...")
         sys.stdout.flush()
 
-        # Antwort von ChatGPT
+        # Antwort + Folgefrage-Einschaetzung in einem einzigen GPT-Call (JSON-Modus)
         completion = openai.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{
-                "role": "user", 
-                "content": f"Du bist ein sprechender Spiegel, beantworte die folgende Frage in höchstens 3 Sätzen: {prompt}"
-                }]
-        )
-        answer = completion.choices[0].message.content        # Antwort speichern
-        
-        # GPT soll prüfen, ob Folgefrage sinnvoll wäre
-        followup_check = openai.chat.completions.create(
-            model="gpt-4o-mini",
+            response_format={"type": "json_object"},
             messages=[
-                {"role": "system","content": "Du bist ein strenger Filter, der nur mit JA antwortet, wenn eine Rückfrage ausdrücklich erwartet wird – z. B. durch ein Fragezeichen, eine Einladung zur Reaktion oder wenn der Satz offen endet."},
-                {"role": "user", "content": f"Ist folgende Antwort eine, auf die man sinnvoll antworten oder eine Rückfrage stellen würde?\n\n\"{answer}\"\n\nAntworte ausschließlich mit JA oder NEIN."}
+                {"role": "system", "content": (
+                    "Du bist ein sprechender Spiegel. Beantworte die Frage des Nutzers in hoechstens 3 Saetzen. "
+                    "Haeng keine pauschale Abschlussfloskel an wie 'Kann ich sonst noch etwas fuer dich tun?' oder 'Hast du noch weitere Fragen?'. "
+                    "Entscheide zusaetzlich anhand von BEIDEM - der Eingabe des Nutzers UND deiner eigenen Antwort - ob eine Rueckfrage sinnvoll ist. "
+                    "followup=true NUR wenn die Eingabe des Nutzers erkennbar unvollstaendig/mehrdeutig war oder deine Antwort inhaltlich eine Praezisierung braucht. "
+                    "followup=false bei Verabschiedungen, Dank, abgeschlossenen Aussagen, Smalltalk-Enden oder wenn die Eingabe unverstaendlich/leer war - auch wenn deine Antwort zufaellig mit einem Fragezeichen endet. "
+                    "Antworte ausschliesslich als JSON-Objekt mit den Feldern answer (string) und followup (bool)."
+                )},
+                {"role": "user", "content": prompt}
             ]
         )
-        
-        followup_raw = followup_check.choices[0].message.content.strip().lower()        # Antwort für Follow up schreiben
-        needs_followup = "ja" in followup_raw
+        result = json.loads(completion.choices[0].message.content)
+        answer = result.get("answer", "")
+        needs_followup = bool(result.get("followup", False))
 
         print(f"GPT-Antwort: {answer}")
         sys.stdout.flush()
@@ -184,47 +180,23 @@ def process():
         print("Starte TTS...")
         sys.stdout.flush()
         if GOOGLE_TTS_API:
-            
-            # Google TTS mit GPT Antwort
-            tts_url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_TTS_API}"
-            headers = {"Content-Type": "application/json"}
-            payload = {
-                "input": {"text": answer},
-                "voice": {
-                    "languageCode": "de-DE",
-                    "name": "de-DE-Standard-B"        # Language Model
-                },
-                "audioConfig": {
-                    "audioEncoding": "LINEAR16",
-                    "speakingRate": 1.2,
-                    "pitch": 1.5,
-                    "sampleRateHertz": 22050
-                }
-            }
-
-            response = requests.post(tts_url, headers=headers, json=payload).json()
-
-            if "audioContent" in response:
-                audio_data = response["audioContent"]
-                with open(RESPONSE_FILE, "wb") as out:
-                    out.write(base64.b64decode(audio_data))
-                print("TTS erfolgreich. Antwort gespeichert.")
-            else:
+            if not synthesize_tts(answer, RESPONSE_FILE):
                 raise Exception("Google TTS did not return audioContent.")
+            print("TTS erfolgreich. Antwort gespeichert.")
         else:
             with open(RESPONSE_FILE, "wb") as out:
                 out.write(b"")
-            print("Kein GOOGLE_TTS_API – leere Datei.")
+            print("Kein GOOGLE_TTS_API - leere Datei.")
         sys.stdout.flush()
     except Exception as e:
         print(f"TTS-Fehler: {e}")
         sys.stdout.flush()
         return jsonify({"error": f"Google TTS failed: {str(e)}"}), 500
 
-    return jsonify({    # Ergebnis zurückgeben
+    return jsonify({    # Ergebnis zurueckgeben
         "text": answer,
         "followup": needs_followup
-})
+    })
 
 
 # Übergangsaudio
@@ -235,7 +207,7 @@ def get_thinking():
     else:
         return jsonify({"error": "No thinking audio found."}), 404
 
-# Antwort Audio 
+# Antwort Audio
 @app.route("/response.wav", methods=["GET"])
 def get_audio():
     if os.path.exists(RESPONSE_FILE):
