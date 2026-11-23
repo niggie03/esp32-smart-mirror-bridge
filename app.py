@@ -14,6 +14,9 @@ THINKING_VARIANTS_DIR = "static/thinking_variants"
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 GOOGLE_TTS_API = os.environ.get("GOOGLE_TTS_API")
+PERSONA_SECRET = os.environ.get("PERSONA_SECRET")
+PERSONA_FILE = "persona.txt"
+DEFAULT_PERSONA = "Du bist ein sprechender Spiegel."
 
 openai.api_key = OPENAI_API_KEY
 
@@ -101,10 +104,38 @@ def pick_thinking_audio():
 
 pregenerate_thinking_variants()
 
+def get_persona():
+    if os.path.exists(PERSONA_FILE):
+        with open(PERSONA_FILE, "r", encoding="utf-8") as f:
+            text = f.read().strip()
+            if text:
+                return text
+    return DEFAULT_PERSONA
+
 # Allgemeine Statusanzeige
 @app.route("/")
 def index():
     return "ESP32 Smart Mirror Bridge is online"
+
+# Persona aendern (z.B. vom Desktop-Shortcut aus)
+@app.route("/persona", methods=["GET", "POST"])
+def persona():
+    if request.method == "GET":
+        return jsonify({"persona": get_persona()})
+
+    if not PERSONA_SECRET or request.headers.get("X-Secret") != PERSONA_SECRET:
+        return jsonify({"error": "unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    text = (data.get("persona") or "").strip()
+    if not text:
+        return jsonify({"error": "persona darf nicht leer sein"}), 400
+
+    with open(PERSONA_FILE, "w", encoding="utf-8") as f:
+        f.write(text)
+    print(f"Persona geaendert: {text}")
+    sys.stdout.flush()
+    return jsonify({"status": "ok", "persona": text})
 
 # Upload Funktion
 @app.route("/upload", methods=["POST"])
@@ -155,7 +186,7 @@ def process():
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": (
-                    "Du bist ein sprechender Spiegel. Beantworte die Frage des Nutzers in hoechstens 3 Saetzen. "
+                    f"{get_persona()} Beantworte die Frage des Nutzers in hoechstens 3 Saetzen. "
                     "Haeng keine pauschale Abschlussfloskel an wie 'Kann ich sonst noch etwas fuer dich tun?' oder 'Hast du noch weitere Fragen?'. "
                     "Entscheide zusaetzlich anhand von BEIDEM - der Eingabe des Nutzers UND deiner eigenen Antwort - ob eine Rueckfrage sinnvoll ist. "
                     "followup=true NUR wenn die Eingabe des Nutzers erkennbar unvollstaendig/mehrdeutig war oder deine Antwort inhaltlich eine Praezisierung braucht. "
