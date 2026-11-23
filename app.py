@@ -153,7 +153,7 @@ def process():
 
         # Antwort von ChatGPT
         completion = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[{
                 "role": "user", 
                 "content": f"Du bist ein sprechender Spiegel, beantworte die folgende Frage in höchstens 3 Sätzen: {prompt}"
@@ -163,7 +163,7 @@ def process():
         
         # GPT soll prüfen, ob Folgefrage sinnvoll wäre
         followup_check = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system","content": "Du bist ein strenger Filter, der nur mit JA antwortet, wenn eine Rückfrage ausdrücklich erwartet wird – z. B. durch ein Fragezeichen, eine Einladung zur Reaktion oder wenn der Satz offen endet."},
                 {"role": "user", "content": f"Ist folgende Antwort eine, auf die man sinnvoll antworten oder eine Rückfrage stellen würde?\n\n\"{answer}\"\n\nAntworte ausschließlich mit JA oder NEIN."}
